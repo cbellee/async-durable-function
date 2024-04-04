@@ -45,5 +45,6 @@ funcAppName=$(echo $outputs | jq '.funcAppName.value' -r)
 logicAppName=$(echo $outputs | jq '.logicAppName.value' -r)
 
 # deploy function & workflow apps
+# due to private endpoint restrictions, code deployment will need to occur from a VM within the virtual network
 az functionapp deployment source config-zip --name $funcAppName --resource-group $rgName --subscription $subscription --src ./func.zip
 az logicapp deployment source config-zip --name $logicAppName --resource-group $rgName  --subscription $subscription --src ./workflow.zip

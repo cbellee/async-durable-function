@@ -94,6 +94,7 @@ module blobStorageAccount 'modules/storageAccount.bicep' = {
     name: 'blob'
     vnetName: vnet.outputs.name
     subnetName: vnet.outputs.subnets[4].name
+    isPrivate: false
     containerNames: [
       'source'
       'dest'

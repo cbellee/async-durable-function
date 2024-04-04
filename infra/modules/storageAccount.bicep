@@ -7,6 +7,7 @@ param deployUserRbac bool = false
 param subnetName string
 param vnetName string
 param name string
+param isPrivate bool = true
 
 var suffix = uniqueString(resourceGroup().id)
 var storageAccountName = 'stor${name}${suffix}'
@@ -84,7 +85,7 @@ module privateEndpointBlob 'privateEndpoint.bicep' = {
   }
 }
 
-module privateEndpointTablr 'privateEndpoint.bicep' = {
+module privateEndpointTable 'privateEndpoint.bicep' = {
   name: 'privateEndpoint-table-module'
   params: {
     location: location
@@ -96,7 +97,7 @@ module privateEndpointTablr 'privateEndpoint.bicep' = {
   }
 }
 
-module privateEndpointQueue 'privateEndpoint.bicep' = {
+module privateEndpointQueue 'privateEndpoint.bicep' = if (isPrivate) {
   name: 'privateEndpoint-queue-module'
   params: {
     location: location
@@ -108,7 +109,7 @@ module privateEndpointQueue 'privateEndpoint.bicep' = {
   }
 }
 
-module privateEndpointFile 'privateEndpoint.bicep' = {
+module privateEndpointFile 'privateEndpoint.bicep' = if (isPrivate) {
   name: 'privateEndpoint-module'
   params: {
     location: location
