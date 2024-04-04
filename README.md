@@ -13,5 +13,5 @@ To deploy the solution, you will need to have the Azure CLI installed and be log
 - Execute the `./deploy.sh` script
 - The script will create a resource group, storage accounts, private endpoints, virtual network, app service plans, logic app, function app and private DNS zones.
 - The script will also compile the Function App and zip both the function and logic apps.
-- Due to private endpoint restrictions, final code deployment (lines 49  &50) will need to occur from a VM within the virtual network.
+- Due to private endpoint restrictions, final code deployment (lines 49 & 50) will need to occur from a VM within the virtual network.
 - before executing the logic app, you will need to upload a blob named `testblob` to the 'source' container in the storage account prefixed `storblob`.
