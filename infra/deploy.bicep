@@ -90,7 +90,7 @@ module blobStorageAccount 'modules/storageAccount.bicep' = {
     location: location
     uamiPrincipalId: uami.properties.principalId
     userPrincipalId: userPrincipalId
-    name: ''
+    name: 'blobcopy'
     vnetName: vnet.outputs.name
     subnetName: vnet.outputs.subnets[4].name
     containerNames: [
