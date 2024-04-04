@@ -1,10 +1,11 @@
 param location string = 'australiaeast'
-param uamiName string = 'my-uami'
 param blobName string
 param userPrincipalId string
 
 var appServicePrivateDnsZoneName = 'privatelink.azurewebsites.net'
 var storageAccountPrivateDnsZoneName = 'privatelink.blob.core.windows.net'
+var suffix = uniqueString(resourceGroup().id)
+var uamiName = 'uami-${suffix}'
 
 resource storageAccountPrivateDnsZone 'Microsoft.Network/privateDnsZones@2020-06-01' = {
   name: storageAccountPrivateDnsZoneName

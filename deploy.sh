@@ -1,7 +1,6 @@
 location='australiaeast'
-rgName='dec-durable-func-rg'
+rgName='durable-func-rg'
 subscription=$(az account show --query id --output tsv)
-uamiName='my-uami'
 blobName='testblob'
 userPrincipalId=$(az ad signed-in-user show --query id -o tsv)
 deployContainerName='deploy'
@@ -32,7 +31,6 @@ az deployment group create \
     --resource-group $rgName \
     --template-file ./infra/deploy.bicep \
     --parameters location=$location \
-    --parameters uamiName=$uamiName \
     --parameters blobName=$blobName \
     --parameters userPrincipalId=$userPrincipalId
 
