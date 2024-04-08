@@ -1,9 +1,10 @@
 param location string = 'australiaeast'
 param blobName string
 param userPrincipalId string
+param isPrivate bool = false
 
 var appServicePrivateDnsZoneName = 'privatelink.azurewebsites.net'
-var storageAccountPrivateDnsZoneName = 'privatelink.blob.core.windows.net'
+var storageAccountPrivateDnsZoneName = 'privatelink.blob.${environment().suffixes.storage}'
 var suffix = uniqueString(resourceGroup().id)
 var uamiName = 'uami-${suffix}'
 
@@ -94,7 +95,9 @@ module blobStorageAccount 'modules/storageAccount.bicep' = {
     name: 'blob'
     vnetName: vnet.outputs.name
     subnetName: vnet.outputs.subnets[4].name
-    isPrivate: false
+    isPrivate: isPrivate
+    deployUamiRbac: true
+    deployUserRbac: true
     containerNames: [
       'source'
       'dest'
@@ -113,6 +116,7 @@ module logicApp './modules/logicApp.bicep' = {
     aiName: ai.outputs.name
     functionAppName: funcApp.outputs.name
     functionAppKey: funcApp.outputs.key
+    storageAccountType: 'Standard_LRS'
   }
 }
 
@@ -127,10 +131,11 @@ module funcApp './modules/funcApp.bicep' = {
     aiName: ai.outputs.name
     blobStorageAccountName: blobStorageAccount.outputs.name
     blobName: blobName
+    storageAccountType: 'Standard_LRS'
   }
 }
 
-module privateEndpoint 'modules/privateEndpoint.bicep' = {
+module privateEndpoint 'modules/privateEndpoint.bicep' = if (isPrivate) {
   name: 'private-endpoint-module'
   params: {
     location: location

@@ -2,12 +2,12 @@ param location string
 param containerNames array
 param userPrincipalId string = ''
 param uamiPrincipalId string = ''
-param deployUamiRbac bool = false
-param deployUserRbac bool = false
+param deployUamiRbac bool
+param deployUserRbac bool
 param subnetName string
 param vnetName string
 param name string
-param isPrivate bool = true
+param isPrivate bool = false
 
 var suffix = uniqueString(resourceGroup().id)
 var storageAccountName = 'stor${name}${suffix}'
@@ -73,53 +73,57 @@ resource storageAccountBlobServiceContainer 'Microsoft.Storage/storageAccounts/b
   }
 ]
 
-module privateEndpointBlob 'privateEndpoint.bicep' = {
-  name: 'privateEndpoint-blob-module'
-  params: {
-    location: location
-    privateDnsZoneName: 'privatelink.blob.${environment().suffixes.storage}'
-    resourceId: storageAccount.id
-    subnetName: subnetName
-    vnetName: vnetName
-    groupId: 'blob'
+module privateEndpointBlob 'privateEndpoint.bicep' =
+  if (isPrivate) {
+    name: 'privateEndpoint-blob-module'
+    params: {
+      location: location
+      privateDnsZoneName: 'privatelink.blob.${environment().suffixes.storage}'
+      resourceId: storageAccount.id
+      subnetName: subnetName
+      vnetName: vnetName
+      groupId: 'blob'
+    }
   }
-}
 
-module privateEndpointTable 'privateEndpoint.bicep' = {
-  name: 'privateEndpoint-table-module'
-  params: {
-    location: location
-    privateDnsZoneName: 'privatelink.blob.${environment().suffixes.storage}'
-    resourceId: storageAccount.id
-    subnetName: subnetName
-    vnetName: vnetName
-    groupId: 'table'
+module privateEndpointTable 'privateEndpoint.bicep' =
+  if (isPrivate) {
+    name: 'privateEndpoint-table-module'
+    params: {
+      location: location
+      privateDnsZoneName: 'privatelink.blob.${environment().suffixes.storage}'
+      resourceId: storageAccount.id
+      subnetName: subnetName
+      vnetName: vnetName
+      groupId: 'table'
+    }
   }
-}
 
-module privateEndpointQueue 'privateEndpoint.bicep' = if (isPrivate) {
-  name: 'privateEndpoint-queue-module'
-  params: {
-    location: location
-    privateDnsZoneName: 'privatelink.blob.${environment().suffixes.storage}'
-    resourceId: storageAccount.id
-    subnetName: subnetName
-    vnetName: vnetName
-    groupId: 'queue'
+module privateEndpointQueue 'privateEndpoint.bicep' =
+  if (isPrivate) {
+    name: 'privateEndpoint-queue-module'
+    params: {
+      location: location
+      privateDnsZoneName: 'privatelink.blob.${environment().suffixes.storage}'
+      resourceId: storageAccount.id
+      subnetName: subnetName
+      vnetName: vnetName
+      groupId: 'queue'
+    }
   }
-}
 
-module privateEndpointFile 'privateEndpoint.bicep' = if (isPrivate) {
-  name: 'privateEndpoint-module'
-  params: {
-    location: location
-    privateDnsZoneName: 'privatelink.blob.${environment().suffixes.storage}'
-    resourceId: storageAccount.id
-    subnetName: subnetName
-    vnetName: vnetName
-    groupId: 'file'
+module privateEndpointFile 'privateEndpoint.bicep' =
+  if (isPrivate) {
+    name: 'privateEndpoint-module'
+    params: {
+      location: location
+      privateDnsZoneName: 'privatelink.blob.${environment().suffixes.storage}'
+      resourceId: storageAccount.id
+      subnetName: subnetName
+      vnetName: vnetName
+      groupId: 'file'
+    }
   }
-}
 
 module uamiRbac 'storageAccountRbac.bicep' =
   if (deployUamiRbac) {

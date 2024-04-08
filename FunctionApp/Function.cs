@@ -40,7 +40,12 @@ namespace FunctionApp
                 BlobName = blobName
             };
 
+            // Wait for 7 minutes 
+            DateTime dueTime = context.CurrentUtcDateTime.AddMinutes(7);
+            await context.CreateTimer(dueTime, CancellationToken.None);
+
             outputs.Add(await context.CallActivityAsync<string>(nameof(CopyBlob), storageDetails));
+
             return outputs;
         }
 
@@ -91,6 +96,7 @@ namespace FunctionApp
             }
 
             log.LogInformation($"copy complete...");
+
             return $"copy complete...";
         }
 

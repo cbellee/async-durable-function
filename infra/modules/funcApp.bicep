@@ -175,11 +175,11 @@ resource funcAppConfig 'Microsoft.Web/sites/config@2023-01-01' = {
     appSettings: [
       {
         name: 'WEBSITE_CONTENTOVERVNET'
-        value: 1
+        value: '0'
       }
       {
         name: 'WEBSITE_VNET_ROUTE_ALL'
-        value: 1
+        value: '0'
       }
       {
         name: 'AzureWebJobsStorage'
@@ -199,7 +199,7 @@ resource funcAppConfig 'Microsoft.Web/sites/config@2023-01-01' = {
       }
       {
         name: 'WEBSITE_RUN_FROM_PACKAGE'
-        value: 1
+        value: '1'
       }
       {
         name: 'AZURE_CLIENT_ID'

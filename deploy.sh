@@ -1,9 +1,9 @@
 location='australiaeast'
-rgName='durable-func-rg'
+rgName='durable-func-logic-demo-rg'
 subscription=$(az account show --query id --output tsv)
 blobName='testblob'
 userPrincipalId=$(az ad signed-in-user show --query id -o tsv)
-deployContainerName='deploy'
+deployContainerName='14s-vs-macarthur-rams-2024-03-23.mp4'
 
 # create resource group
 az group create --location $location --name $rgName
@@ -32,7 +32,8 @@ az deployment group create \
     --template-file ./infra/deploy.bicep \
     --parameters location=$location \
     --parameters blobName=$blobName \
-    --parameters userPrincipalId=$userPrincipalId
+    --parameters userPrincipalId=$userPrincipalId \
+    --parameters isPrivate='false'
 
 # get deployment output
 outputs=$(az deployment group show \

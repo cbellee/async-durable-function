@@ -53,7 +53,6 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2022-05-01' = {
   }
 }
 
-
 resource logicApp 'Microsoft.Web/sites@2023-01-01' = {
   name: name
   location: location
@@ -163,14 +162,18 @@ resource logicAppConfig 'Microsoft.Web/sites/config@2023-01-01' = {
     functionsRuntimeScaleMonitoringEnabled: false
     appSettings: [
       {
+        name: 'WEBSITE_DNS_SERVER'
+        value: '168.63.129.16'
+      }
+      {
         name: 'WEBSITE_CONTENTOVERVNET'
-        value: 1
+        value: '0'
       }
       {
         name: 'WEBSITE_VNET_ROUTE_ALL'
-        value: 1
+        value: '0'
       }
-      { 
+      {
         name: 'APP_KIND'
         value: 'workflowApp'
       }
