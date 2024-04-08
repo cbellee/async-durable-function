@@ -3,7 +3,7 @@ rgName='durable-func-logic-demo-rg'
 subscription=$(az account show --query id --output tsv)
 blobName='testblob'
 userPrincipalId=$(az ad signed-in-user show --query id -o tsv)
-deployContainerName='14s-vs-macarthur-rams-2024-03-23.mp4'
+deployContainerName='source_video.mp4'
 
 # create resource group
 az group create --location $location --name $rgName
