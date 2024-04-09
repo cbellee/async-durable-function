@@ -3,7 +3,7 @@ rgName='durable-func-logic-demo-rg'
 subscription=$(az account show --query id --output tsv)
 blobName='testblob'
 userPrincipalId=$(az ad signed-in-user show --query id -o tsv)
-deployContainerName='source_video.mp4'
+blobName='source_video.mp4'
 
 # set to 'true' to deploy function and required storage account behind a private endpoint
 # if private endpoints are deployed, you'll only be able to deploy the function from within the virtual network
