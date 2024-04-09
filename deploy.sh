@@ -5,6 +5,10 @@ blobName='testblob'
 userPrincipalId=$(az ad signed-in-user show --query id -o tsv)
 deployContainerName='source_video.mp4'
 
+# set to 'true' to deploy function and required storage account behind a private endpoint
+# if private endpoints are deployed, you'll only be able to deploy the function from within the virtual network
+isPrivate='false' 
+
 # create resource group
 az group create --location $location --name $rgName
 
@@ -33,7 +37,7 @@ az deployment group create \
     --parameters location=$location \
     --parameters blobName=$blobName \
     --parameters userPrincipalId=$userPrincipalId \
-    --parameters isPrivate='false'
+    --parameters isPrivate=$isPrivate
 
 # get deployment output
 outputs=$(az deployment group show \
@@ -46,6 +50,6 @@ funcAppName=$(echo $outputs | jq '.funcAppName.value' -r)
 logicAppName=$(echo $outputs | jq '.logicAppName.value' -r)
 
 # deploy function & workflow apps
-# due to private endpoint restrictions, code deployment will need to occur from a VM within the virtual network
+# this step will only work if you specified isPrivate='false' at the beginning of the script
 az functionapp deployment source config-zip --name $funcAppName --resource-group $rgName --subscription $subscription --src ./func.zip
 az logicapp deployment source config-zip --name $logicAppName --resource-group $rgName  --subscription $subscription --src ./workflow.zip

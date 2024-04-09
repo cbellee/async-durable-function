@@ -100,7 +100,7 @@ namespace FunctionApp
             return $"copy complete...";
         }
 
-        [FunctionName("Function1_HttpStart")]
+        [FunctionName("Function_HttpStart")]
         public static async Task<HttpResponseMessage> HttpStart(
             [HttpTrigger(AuthorizationLevel.Anonymous, "get", "post")] HttpRequestMessage req,
             [DurableClient] IDurableOrchestrationClient starter,
