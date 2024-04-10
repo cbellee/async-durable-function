@@ -8,17 +8,17 @@ var storageAccountPrivateDnsZoneName = 'privatelink.blob.${environment().suffixe
 var suffix = uniqueString(resourceGroup().id)
 var uamiName = 'uami-${suffix}'
 
-resource storageAccountPrivateDnsZone 'Microsoft.Network/privateDnsZones@2020-06-01' = {
+resource storageAccountPrivateDnsZone 'Microsoft.Network/privateDnsZones@2020-06-01' = if (isPrivate) {
   name: storageAccountPrivateDnsZoneName
   location: 'global'
 }
 
-resource appServicePrivateDnsZone 'Microsoft.Network/privateDnsZones@2020-06-01' = {
+resource appServicePrivateDnsZone 'Microsoft.Network/privateDnsZones@2020-06-01' = if (isPrivate) {
   name: appServicePrivateDnsZoneName
   location: 'global'
 }
 
-resource storagePrivateDnsZoneLink 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2020-06-01' = {
+resource storagePrivateDnsZoneLink 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2020-06-01' = if (isPrivate) {
   parent: storageAccountPrivateDnsZone
   name: '${storageAccountPrivateDnsZoneName}-link'
   location: 'global'
@@ -30,7 +30,7 @@ resource storagePrivateDnsZoneLink 'Microsoft.Network/privateDnsZones/virtualNet
   }
 }
 
-resource appServicePrivateDnsZoneLink 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2020-06-01' = {
+resource appServicePrivateDnsZoneLink 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2020-06-01' = if (isPrivate) {
   parent: appServicePrivateDnsZone
   name: '${appServicePrivateDnsZoneName}-link'
   location: 'global'
@@ -94,10 +94,11 @@ module blobStorageAccount 'modules/storageAccount.bicep' = {
     userPrincipalId: userPrincipalId
     name: 'blob'
     vnetName: vnet.outputs.name
-    subnetName: vnet.outputs.subnets[4].name
+    privateEndpointSubnetName: vnet.outputs.subnets[4].name
     isPrivate: isPrivate
     deployUamiRbac: true
     deployUserRbac: true
+    fileShareName: toLower('testshare')
     containerNames: [
       'source'
       'dest'
@@ -111,12 +112,12 @@ module logicApp './modules/logicApp.bicep' = {
     location: location
     virtualNetworkName: vnet.outputs.name
     appServicePlanName: logicAppAsp.outputs.name
-    subnetName: vnet.outputs.subnets[2].name
+    vnetIntegrationSubnetName: vnet.outputs.subnets[2].name
     uamiName: uamiName
     aiName: ai.outputs.name
     functionAppName: funcApp.outputs.name
     functionAppKey: funcApp.outputs.key
-    storageAccountType: 'Standard_LRS'
+    isPrivate: isPrivate
   }
 }
 
@@ -127,25 +128,28 @@ module funcApp './modules/funcApp.bicep' = {
     virtualNetworkName: vnet.outputs.name
     appServicePlanName: funcAppAsp.outputs.name
     subnetName: vnet.outputs.subnets[3].name
+    privateEndpointSubnetName: vnet.outputs.subnets[4].name
+    functionWorkerRuntime: 'dotnet'
     uamiName: uamiName
     aiName: ai.outputs.name
     blobStorageAccountName: blobStorageAccount.outputs.name
     blobName: blobName
-    storageAccountType: 'Standard_LRS'
+    isPrivate: isPrivate
   }
 }
 
-module privateEndpoint 'modules/privateEndpoint.bicep' = if (isPrivate) {
-  name: 'private-endpoint-module'
-  params: {
-    location: location
-    privateDnsZoneName: 'privatelink.azurewebsites.net'
-    vnetName: vnet.outputs.name
-    subnetName: vnet.outputs.subnets[4].name
-    groupId: 'sites'
-    resourceId: funcApp.outputs.id
+module privateEndpoint 'modules/privateEndpoint.bicep' =
+  if (isPrivate) {
+    name: 'private-endpoint-module'
+    params: {
+      location: location
+      privateDnsZoneName: 'privatelink.azurewebsites.net'
+      vnetName: vnet.outputs.name
+      subnetName: vnet.outputs.subnets[4].name
+      groupId: 'sites'
+      resourceId: funcApp.outputs.id
+    }
   }
-}
 
 output logicAppName string = logicApp.outputs.name
 output funcAppName string = funcApp.outputs.name

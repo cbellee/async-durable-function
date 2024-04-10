@@ -1,5 +1,5 @@
 location='australiaeast'
-rgName='durable-func-logic-demo-rg'
+rgName='durable-func-logic-plink-rg'
 subscription=$(az account show --query id --output tsv)
 blobName='testblob'
 userPrincipalId=$(az ad signed-in-user show --query id -o tsv)

@@ -1,11 +1,13 @@
 param location string
 param subnetName string
+param privateEndpointSubnetName string
 param uamiName string
 param appServicePlanName string
 param virtualNetworkName string
 param blobStorageAccountName string
 param aiName string
 param blobName string
+param isPrivate bool
 
 @description('The language worker runtime to load in the function app.')
 @allowed([
@@ -15,17 +17,9 @@ param blobName string
 ])
 param functionWorkerRuntime string = 'dotnet'
 
-@description('Storage Account type')
-@allowed([
-  'Standard_LRS'
-  'Standard_GRS'
-  'Standard_RAGRS'
-])
-param storageAccountType string = 'Standard_LRS'
-
 var suffix = uniqueString(resourceGroup().id)
-var funcAppName = 'func-${suffix}'
-var storageAccountName = 'storfunc${suffix}'
+var name = 'func-${suffix}'
+var storageAccountName = 'func'
 
 resource ai 'Microsoft.Insights/components@2020-02-02' existing = {
   name: aiName
@@ -52,21 +46,24 @@ resource uami 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-07-31-previ
   name: uamiName
 }
 
-resource storageAccount 'Microsoft.Storage/storageAccounts@2022-05-01' = {
-  name: storageAccountName
-  location: location
-  sku: {
-    name: storageAccountType
-  }
-  kind: 'Storage'
-  properties: {
-    supportsHttpsTrafficOnly: true
-    defaultToOAuthAuthentication: true
+module storageAccount 'storageAccount.bicep' = {
+  name: 'func-storage-account-module'
+  params: {
+    name: storageAccountName
+    location: location
+    containerNames: []
+    deployUamiRbac: true
+    deployUserRbac: false
+    isPrivate: isPrivate
+    privateEndpointSubnetName: privateEndpointSubnetName
+    vnetName: vnet.name
+    uamiPrincipalId: uami.properties.principalId
+    fileShareName: toLower(name)
   }
 }
 
 resource funcApp 'Microsoft.Web/sites@2023-01-01' = {
-  name: funcAppName
+  name: name
   location: location
   kind: 'functionapp'
   identity: {
@@ -79,12 +76,12 @@ resource funcApp 'Microsoft.Web/sites@2023-01-01' = {
     httpsOnly: true
     hostNameSslStates: [
       {
-        name: '${funcAppName}.azurewebsites.net'
+        name: '${name}.azurewebsites.net'
         sslState: 'Disabled'
         hostType: 'Standard'
       }
       {
-        name: '${funcAppName}.scm.azurewebsites.net'
+        name: '${name}.scm.azurewebsites.net'
         sslState: 'Disabled'
         hostType: 'Repository'
       }
@@ -175,23 +172,23 @@ resource funcAppConfig 'Microsoft.Web/sites/config@2023-01-01' = {
     appSettings: [
       {
         name: 'WEBSITE_CONTENTOVERVNET'
-        value: '0'
+        value: (isPrivate) ? '1' : '0'
       }
       {
         name: 'WEBSITE_VNET_ROUTE_ALL'
-        value: '0'
+        value: (isPrivate) ? '1' : '0'
       }
       {
         name: 'AzureWebJobsStorage'
-        value: 'DefaultEndpointsProtocol=https;AccountName=${storageAccountName};EndpointSuffix=${environment().suffixes.storage};AccountKey=${storageAccount.listKeys().keys[0].value}'
+        value: 'DefaultEndpointsProtocol=https;AccountName=${storageAccountName};EndpointSuffix=${environment().suffixes.storage};AccountKey=${storageAccount.outputs.key}'
       }
       {
         name: 'WEBSITE_CONTENTAZUREFILECONNECTIONSTRING'
-        value: 'DefaultEndpointsProtocol=https;AccountName=${storageAccountName};EndpointSuffix=${environment().suffixes.storage};AccountKey=${storageAccount.listKeys().keys[0].value}'
+        value: 'DefaultEndpointsProtocol=https;AccountName=${storageAccountName};EndpointSuffix=${environment().suffixes.storage};AccountKey=${storageAccount.outputs.key}'
       }
       {
         name: 'WEBSITE_CONTENTSHARE'
-        value: toLower(funcAppName)
+        value: toLower(name)
       }
       {
         name: 'FUNCTIONS_EXTENSION_VERSION'

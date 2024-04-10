@@ -1,23 +1,17 @@
 param location string
-param subnetName string
+param vnetIntegrationSubnetName string
 param uamiName string
 param appServicePlanName string
 param virtualNetworkName string
 param aiName string
 param functionAppName string
 param functionAppKey string
-
-@description('Storage Account type')
-@allowed([
-  'Standard_LRS'
-  'Standard_GRS'
-  'Standard_RAGRS'
-])
-param storageAccountType string = 'Standard_LRS'
+param isPrivate bool
+param userPrincipalId string = ''
 
 var suffix = uniqueString(resourceGroup().id)
 var name = 'logic-${suffix}'
-var storageAccountName = 'storlogic${suffix}'
+var storageAccountName = 'logic'
 
 resource ai 'Microsoft.Insights/components@2020-02-02' existing = {
   name: aiName
@@ -33,23 +27,28 @@ resource asp 'Microsoft.Web/serverfarms@2023-01-01' existing = {
 
 resource subnet 'Microsoft.Network/virtualNetworks/subnets@2023-09-01' existing = {
   parent: vnet
-  name: subnetName
+  name: vnetIntegrationSubnetName
 }
 
 resource uami 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-07-31-preview' existing = {
   name: uamiName
 }
 
-resource storageAccount 'Microsoft.Storage/storageAccounts@2022-05-01' = {
-  name: storageAccountName
-  location: location
-  sku: {
-    name: storageAccountType
-  }
-  kind: 'Storage'
-  properties: {
-    supportsHttpsTrafficOnly: true
-    defaultToOAuthAuthentication: true
+module storageAccount 'storageAccount.bicep' = {
+  name: 'logic-app-storage-module'
+  params: {
+    name: storageAccountName
+    location: location
+    containerNames: []
+    deployUamiRbac: true
+    deployUserRbac: true
+    privateEndpointSubnetName: subnet.name
+    isPrivate: isPrivate
+    uamiPrincipalId: uami.properties.principalId
+    userPrincipalId: userPrincipalId
+    storageAccountType: 'Standard_LRS'
+    vnetName: vnet.name
+    fileShareName: toLower(name)
   }
 }
 
@@ -167,11 +166,11 @@ resource logicAppConfig 'Microsoft.Web/sites/config@2023-01-01' = {
       }
       {
         name: 'WEBSITE_CONTENTOVERVNET'
-        value: '0'
+        value: (isPrivate) ? '1' : '0'
       }
       {
         name: 'WEBSITE_VNET_ROUTE_ALL'
-        value: '0'
+        value: (isPrivate) ? '1' : '0'
       }
       {
         name: 'APP_KIND'
@@ -187,11 +186,11 @@ resource logicAppConfig 'Microsoft.Web/sites/config@2023-01-01' = {
       }
       {
         name: 'WEBSITE_CONTENTAZUREFILECONNECTIONSTRING'
-        value: 'DefaultEndpointsProtocol=https;AccountName=${storageAccountName};EndpointSuffix=${environment().suffixes.storage};AccountKey=${storageAccount.listKeys().keys[0].value}'
+        value: 'DefaultEndpointsProtocol=https;AccountName=${storageAccountName};EndpointSuffix=${environment().suffixes.storage};AccountKey=${storageAccount.outputs.key}'
       }
       {
         name: 'AzureWebJobsStorage'
-        value: 'DefaultEndpointsProtocol=https;AccountName=${storageAccountName};EndpointSuffix=${environment().suffixes.storage};AccountKey=${storageAccount.listKeys().keys[0].value}'
+        value: 'DefaultEndpointsProtocol=https;AccountName=${storageAccountName};EndpointSuffix=${environment().suffixes.storage};AccountKey=${storageAccount.outputs.key}'
       }
       {
         name: 'WEBSITE_CONTENTSHARE'

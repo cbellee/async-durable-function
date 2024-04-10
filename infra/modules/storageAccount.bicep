@@ -2,12 +2,21 @@ param location string
 param containerNames array
 param userPrincipalId string = ''
 param uamiPrincipalId string = ''
-param deployUamiRbac bool
-param deployUserRbac bool
-param subnetName string
+param deployUamiRbac bool = true
+param deployUserRbac bool = false
+param privateEndpointSubnetName string
 param vnetName string
 param name string
-param isPrivate bool = false
+param isPrivate bool
+param fileShareName string
+
+@description('Storage Account type')
+@allowed([
+  'Standard_LRS'
+  'Standard_GRS'
+  'Standard_RAGRS'
+])
+param storageAccountType string = 'Standard_LRS'
 
 var suffix = uniqueString(resourceGroup().id)
 var storageAccountName = 'stor${name}${suffix}'
@@ -17,7 +26,7 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2023-01-01' = {
   name: storageAccountName
   location: location
   sku: {
-    name: 'Standard_LRS'
+    name: storageAccountType
   }
   kind: 'StorageV2'
   properties: {
@@ -73,6 +82,11 @@ resource storageAccountBlobServiceContainer 'Microsoft.Storage/storageAccounts/b
   }
 ]
 
+resource storagrAccountFileShare 'Microsoft.Storage/storageAccounts/fileServices/shares@2023-01-01' = {
+  parent: storageAccountFileService
+  name: fileShareName
+}
+
 module privateEndpointBlob 'privateEndpoint.bicep' =
   if (isPrivate) {
     name: 'privateEndpoint-blob-module'
@@ -80,7 +94,7 @@ module privateEndpointBlob 'privateEndpoint.bicep' =
       location: location
       privateDnsZoneName: 'privatelink.blob.${environment().suffixes.storage}'
       resourceId: storageAccount.id
-      subnetName: subnetName
+      subnetName: privateEndpointSubnetName
       vnetName: vnetName
       groupId: 'blob'
     }
@@ -93,7 +107,7 @@ module privateEndpointTable 'privateEndpoint.bicep' =
       location: location
       privateDnsZoneName: 'privatelink.blob.${environment().suffixes.storage}'
       resourceId: storageAccount.id
-      subnetName: subnetName
+      subnetName: privateEndpointSubnetName
       vnetName: vnetName
       groupId: 'table'
     }
@@ -106,7 +120,7 @@ module privateEndpointQueue 'privateEndpoint.bicep' =
       location: location
       privateDnsZoneName: 'privatelink.blob.${environment().suffixes.storage}'
       resourceId: storageAccount.id
-      subnetName: subnetName
+      subnetName: privateEndpointSubnetName
       vnetName: vnetName
       groupId: 'queue'
     }
@@ -119,7 +133,7 @@ module privateEndpointFile 'privateEndpoint.bicep' =
       location: location
       privateDnsZoneName: 'privatelink.blob.${environment().suffixes.storage}'
       resourceId: storageAccount.id
-      subnetName: subnetName
+      subnetName: privateEndpointSubnetName
       vnetName: vnetName
       groupId: 'file'
     }
@@ -147,3 +161,4 @@ module userRbac 'storageAccountRbac.bicep' =
 
 output name string = storageAccount.name
 output id string = storageAccount.id
+output key string = storageAccount.listKeys().keys[0].value
