@@ -7,7 +7,7 @@ param virtualNetworkName string
 param blobStorageAccountName string
 param aiName string
 param blobName string
-param isPrivate bool
+param isPrivate bool = false
 
 @description('The language worker runtime to load in the function app.')
 @allowed([

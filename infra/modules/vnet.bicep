@@ -2,7 +2,7 @@ param location string
 param addressPrefix string = '10.0.0.0/16'
 
 var suffix = uniqueString(resourceGroup().id)
-var name = 'stor${suffix}'
+var name = 'vnet${suffix}'
 
 resource vnet 'Microsoft.Network/virtualNetworks@2023-09-01' = {
   name: name

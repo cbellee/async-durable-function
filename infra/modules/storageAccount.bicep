@@ -32,19 +32,6 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2023-01-01' = {
   properties: {
     supportsHttpsTrafficOnly: true
     minimumTlsVersion: 'TLS1_2'
-    encryption: {
-      services: {
-        file: {
-          keyType: 'Account'
-          enabled: true
-        }
-        blob: {
-          keyType: 'Account'
-          enabled: true
-        }
-      }
-      keySource: 'Microsoft.Storage'
-    }
   }
 }
 
@@ -82,7 +69,7 @@ resource storageAccountBlobServiceContainer 'Microsoft.Storage/storageAccounts/b
   }
 ]
 
-resource storagrAccountFileShare 'Microsoft.Storage/storageAccounts/fileServices/shares@2023-01-01' = {
+resource storageAccountFileShare 'Microsoft.Storage/storageAccounts/fileServices/shares@2023-01-01' = {
   parent: storageAccountFileService
   name: fileShareName
 }
@@ -105,7 +92,7 @@ module privateEndpointTable 'privateEndpoint.bicep' =
     name: 'privateEndpoint-table-module'
     params: {
       location: location
-      privateDnsZoneName: 'privatelink.blob.${environment().suffixes.storage}'
+      privateDnsZoneName: 'privatelink.table.${environment().suffixes.storage}'
       resourceId: storageAccount.id
       subnetName: privateEndpointSubnetName
       vnetName: vnetName
@@ -118,7 +105,7 @@ module privateEndpointQueue 'privateEndpoint.bicep' =
     name: 'privateEndpoint-queue-module'
     params: {
       location: location
-      privateDnsZoneName: 'privatelink.blob.${environment().suffixes.storage}'
+      privateDnsZoneName: 'privatelink.queue.${environment().suffixes.storage}'
       resourceId: storageAccount.id
       subnetName: privateEndpointSubnetName
       vnetName: vnetName
@@ -128,10 +115,10 @@ module privateEndpointQueue 'privateEndpoint.bicep' =
 
 module privateEndpointFile 'privateEndpoint.bicep' =
   if (isPrivate) {
-    name: 'privateEndpoint-module'
+    name: 'privateEndpoint-file-module'
     params: {
       location: location
-      privateDnsZoneName: 'privatelink.blob.${environment().suffixes.storage}'
+      privateDnsZoneName: 'privatelink.file.${environment().suffixes.storage}'
       resourceId: storageAccount.id
       subnetName: privateEndpointSubnetName
       vnetName: vnetName

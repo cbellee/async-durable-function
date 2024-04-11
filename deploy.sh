@@ -4,9 +4,6 @@ subscription=$(az account show --query id --output tsv)
 blobName='testblob'
 userPrincipalId=$(az ad signed-in-user show --query id -o tsv)
 blobName='source_video.mp4'
-
-# set to 'true' to deploy function and required storage account behind a private endpoint
-# if private endpoints are deployed, you'll only be able to deploy the function from within the virtual network
 isPrivate='false' 
 
 # create resource group
@@ -50,6 +47,17 @@ funcAppName=$(echo $outputs | jq '.funcAppName.value' -r)
 logicAppName=$(echo $outputs | jq '.logicAppName.value' -r)
 
 # deploy function & workflow apps
-# this step will only work if you specified isPrivate='false' at the beginning of the script
 az functionapp deployment source config-zip --name $funcAppName --resource-group $rgName --subscription $subscription --src ./func.zip
 az logicapp deployment source config-zip --name $logicAppName --resource-group $rgName  --subscription $subscription --src ./workflow.zip
+
+# deploy resources again with 'isPrivate' bool set to 'true'
+# this will ensure the function app & logic app's required storage accounts are private & the function app
+# can only be accessed via a private endpoint, although the logic app is still publically accessible
+az deployment group create \
+    --name 'main-deployment' \
+    --resource-group $rgName \
+    --template-file ./infra/deploy.bicep \
+    --parameters location=$location \
+    --parameters blobName=$blobName \
+    --parameters userPrincipalId=$userPrincipalId \
+    --parameters isPrivate='true'
